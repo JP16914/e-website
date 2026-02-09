@@ -1,81 +1,75 @@
-# Production Deployment Plan
+# Simple Deployment Guide (Vercel + Render)
 
-This guide outlines the recommended path for deploying your e-commerce application to production using a modern, scalable stack.
+This is the easiest way to get your website online. We will use Vercel for the frontend and Render for the backend API.
+
+---
 
 ## 1. Prerequisites
-- A [GitHub](https://github.com) account.
-- A [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) account (for the database).
-- An [Upstash](https://upstash.com) account (for Redis).
-- A [Vercel](https://vercel.com) account (for Frontend).
-- A [Render](https://render.com) or [Railway](https://railway.app) account (for Backend API).
+- Your code pushed to a **GitHub** repository.
+- A **MongoDB Atlas** account (Managed Database).
+- An **Upstash** account (Managed Redis).
 
 ---
 
-## 2. Infrastructure Setup
+## 2. Infrastructure Setup (Databases)
 
-### A. Database (MongoDB Atlas)
-1. Create a new Cluster (Shared/Free tier is fine).
-2. Under "Network Access", allow access from `0.0.0.0/0` (or the specific IPs of your hosting provider later).
-3. Create a Database User and password.
-4. Get your Connection String (e.g., `mongodb+srv://user:pass@cluster.mongodb.net/ecommerce?retryWrites=true&w=majority`).
+### A. MongoDB Atlas
+1. Create a Free Cluster on MongoDB Atlas.
+2. In **Network Access**, add `0.0.0.0/0` (this allows Render to connect).
+3. Create a Database User (e.g., `admin`) and copy the password.
+4. Get your Connection String (e.g., `mongodb+srv://admin:pass@cluster.mongodb.net/ecommerce`).
 
-### B. Redis (Upstash)
-1. Create a Redis database.
-2. Copy the connection URL (e.g., `redis://default:token@region.upstash.io:port`).
+### B. Upstash Redis
+1. Create a Redis database on Upstash.
+2. Copy the **Redis URL** (starts with `redis://`).
 
 ---
 
-## 3. Backend Deployment (NestJS)
+## 3. Backend Deployment (Render)
 
-We recommend using **Render** or **Railway** because they handle `Dockerfile` deployments easily.
-
-### Deployment via Render:
-1. Push your code to a GitHub repository.
-2. In Render, create a new **Web Service**.
-3. Point it to your repository and set the "Root Directory" to `apps/api`.
-4. Render will detect the `Dockerfile`.
-5. Add the following **Environment Variables**:
+1. Sign in to [Render](https://render.com).
+2. Click **New +** -> **Web Service**.
+3. Connect your GitHub repository.
+4. Settings:
+   - **Name**: `shopmega-api`
+   - **Root Directory**: `apps/api`
+   - **Runtime**: `Docker`
+5. Click **Advanced** and add **Environment Variables**:
+   - `MONGODB_URI`: *Your Atlas String*
+   - `REDIS_URL`: *Your Upstash URL*
+   - `JWT_ACCESS_SECRET`: *A random secret string*
    - `NODE_ENV`: `production`
-   - `MONGODB_URI`: Your Atlas string
-   - `REDIS_URL`: Your Upstash URL
-   - `JWT_ACCESS_SECRET`: A long, random string
-   - `PORT`: `3001` (Render usually detects 3001 from EXPOSE)
-6. Change the last line of `apps/api/Dockerfile` to `CMD [ "npm", "run", "start:prod" ]`.
+   - `FRONTEND_URL`: `https://your-app.vercel.app` (You can update this after Step 4)
+6. Click **Create Web Service**. Render will build your Docker image and provide a URL (e.g., `https://shopmega-api.onrender.com`).
 
 ---
 
-## 4. Frontend Deployment (Next.js)
+## 4. Frontend Deployment (Vercel)
 
-### Deployment via Vercel:
-1. In Vercel, create a new Project.
-2. Select your GitHub repository.
-3. Configure the **Framework Preset** as Next.js.
-4. Set the **Root Directory** as the repository root (`./`).
-5. Add the following **Environment Variables**:
-   - `NEXT_PUBLIC_API_BASE_URL`: Your Backend URL (e.g., `https://your-api.onrender.com`)
-6. Deploy!
+1. Sign in to [Vercel](https://vercel.com).
+2. Click **New Project** and import your GitHub repo.
+3. Settings:
+   - **Framework Preset**: Next.js
+   - **Root Directory**: Leave as `.` (repository root)
+   - **Environment Variables**:
+     - `NEXT_PUBLIC_API_BASE_URL`: Your Render URL from Step 3.
+4. Click **Deploy**. Vercel will give you a live URL (e.g., `https://e-website-xxx.vercel.app`).
 
 ---
 
-## 5. Required Code Adjustments
+## 5. Seeding Your Production Database
+To populate your live site with products:
+1. Open your local `.env` inside `apps/api`.
+2. Temporarily change `MONGODB_URI` to your **Atlas Production String**.
+3. Run the following command in your local terminal (inside `apps/api`):
+   ```bash
+   npm run build
+   npm run seed
+   ```
+4. Check your live website! All products and users should now appear.
+5. **CRITICAL**: Change your local `.env` back to your local MongoDB if you want to keep working locally.
 
-Before deploying, we should make these safety changes:
+---
 
-### A. Update Backend Dockerfile
-Update `apps/api/Dockerfile` to use the production command:
-```dockerfile
-# Change line 14
-CMD [ "node", "dist/main" ]
-```
-
-### B. CORS Configuration
-Ensure `apps/api/src/main.ts` allows your frontend domain:
-```typescript
-app.enableCors({
-  origin: ['http://localhost:3000', 'https://your-frontend.vercel.app'],
-  credentials: true,
-});
-```
-
-### C. Seed Production Data
-You can run the seed script locally pointing to the production MongoDB URI once to populate your live site.
+## 6. Final Polish
+Once you have your Vercel URL, go back to Render settings and update the `FRONTEND_URL` environment variable. This ensures that cookies and login sessions work perfectly across different domains.
