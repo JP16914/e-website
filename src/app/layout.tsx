@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { Header } from '@/components/layout/Header';
 import { CategoryNav } from '@/components/layout/CategoryNav';
 import { AuthInit } from '@/components/auth/AuthInit';
+import { Suspense } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -24,7 +25,9 @@ export default function RootLayout({
         <AuthInit />
         <div className="relative flex min-h-screen flex-col">
           <Header />
-          <CategoryNav />
+          <Suspense fallback={<div className="h-10 bg-muted/20 animate-pulse" />}>
+            <CategoryNav />
+          </Suspense>
           <main className="flex-1">
             {children}
           </main>
