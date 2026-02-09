@@ -1,5 +1,10 @@
 import AdminDashboardPage from './AdminDashboardPage';
+import { Suspense } from 'react';
 
 export default function Page() {
-  return <AdminDashboardPage />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AdminDashboardPage />
+    </Suspense>
+  );
 }

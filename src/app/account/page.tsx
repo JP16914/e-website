@@ -1,5 +1,10 @@
 import AccountInfoPage from './AccountInfoPage';
+import { Suspense } from 'react';
 
 export default function Page() {
-  return <AccountInfoPage />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AccountInfoPage />
+    </Suspense>
+  );
 }
