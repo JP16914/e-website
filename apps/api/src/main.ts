@@ -8,27 +8,31 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Security & Middleware
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
   app.enableCors({
-    origin: ['http://localhost:3000'], // adjust for prod
+    origin: [frontendUrl],
     credentials: true,
   });
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
-  // Swagger Docs
-  const config = new DocumentBuilder()
-    .setTitle('E-Commerce API')
-    .setDescription('The pragmatist\'s e-commerce backend')
-    .setVersion('1.0')
-    .addTag('Auth')
-    .addTag('Products')
-    .addTag('Cart')
-    .addTag('Orders')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  // Swagger Docs (Optional: disable in prod for security)
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('E-Commerce API')
+      .setDescription('The pragmatist\'s e-commerce backend')
+      .setVersion('1.0')
+      .addTag('Auth')
+      .addTag('Products')
+      .addTag('Cart')
+      .addTag('Orders')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
-  await app.listen(3001);
-  console.log('Server running on http://localhost:3001');
+  const port = process.env.PORT || 3001;
+  await app.listen(port);
+  console.log(`Server running on port ${port}`);
 }
 bootstrap();
